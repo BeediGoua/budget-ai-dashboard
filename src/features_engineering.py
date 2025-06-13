@@ -69,3 +69,27 @@ def tag_fixed_expenses(df, min_occurrence=5):
     recurring = desc_counts[desc_counts >= min_occurrence].index
     df['IsRecurring'] = df['Cleaned_Description'].isin(recurring).astype(int)
     return df
+
+# === 8. NORMALISATION DES COLONNES ET ENCODAGE DES TYPES DE TRANSACTION ===
+def standardize_columns(df):
+    df['Category'] = df['Category'].str.strip().str.lower().str.title()
+    df['Type'] = df['Type'].str.strip().str.lower().str.title()
+    return df
+# 
+def encode_transaction_type(df):
+    type_dummies = pd.get_dummies(df['Type'], prefix='Type')
+    return pd.concat([df, type_dummies], axis=1)
+# 
+def add_zscore_flags(df):
+    df['ZScore_Amount'] = (df['Amount'] - df['Amount'].mean()) / df['Amount'].std()
+    df['IsOutlier_Z'] = (df['ZScore_Amount'].abs() > 3).astype(int)
+    return df
+# 
+def create_prompt_field(df):
+    df['PromptText'] = (
+        "Transaction de " + df['Amount'].astype(str) +
+        "€ chez " + df['Cleaned_Description'] +
+        ", de type " + df['Type'] + ", catégorie " + df['Category']
+    )
+    return df
+
